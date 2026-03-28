@@ -89,6 +89,16 @@ class GitHubAPI {
     return branches;
   }
 
+  async getBranchesForHead(
+    owner: string,
+    repo: string,
+    commitSha: string
+  ): Promise<GitHubBranch[]> {
+    return this.request<GitHubBranch[]>(
+      `/repos/${owner}/${repo}/commits/${commitSha}/branches-where-head`
+    );
+  }
+
   async getRecentCommits(
     owner: string,
     repo: string,
@@ -151,39 +161,47 @@ class GitHubAPI {
     const since = new Date();
     since.setDate(since.getDate() - days);
 
-    const [branches, commits, openPRs] = await Promise.all([
-      this.getBranches(owner, repo),
-      this.getRecentCommits(
-        owner,
-        repo,
-        username,
-        since.toISOString()
-      ),
+    const [commits, openPRs] = await Promise.all([
+      this.getRecentCommits(owner, repo, username, since.toISOString()),
       this.getPullRequests(owner, repo, "open"),
     ]);
 
-    const recentCommitShas = new Set(commits.map((c) => c.sha));
+    if (commits.length === 0) return [];
+
+    const uniqueShas = [...new Set(commits.map((c) => c.sha))];
     const commitBySha = new Map(commits.map((c) => [c.sha, c]));
     const prBranches = new Set(openPRs.map((pr) => pr.head.ref));
 
-    return branches
-      .filter((b) => recentCommitShas.has(b.commit.sha))
-      .map((b) => {
-        const commit = commitBySha.get(b.commit.sha)!;
-        return {
-          name: b.name,
+    const branchResults = await Promise.all(
+      uniqueShas.map((sha) =>
+        this.getBranchesForHead(owner, repo, sha).catch(() => [])
+      )
+    );
+
+    const seen = new Set<string>();
+    const results: RecentBranch[] = [];
+
+    for (let i = 0; i < uniqueShas.length; i++) {
+      const commit = commitBySha.get(uniqueShas[i])!;
+      for (const branch of branchResults[i]) {
+        if (seen.has(branch.name)) continue;
+        seen.add(branch.name);
+        results.push({
+          name: branch.name,
           lastCommitDate: commit.commit.author.date,
           lastCommitMessage: commit.commit.message.split("\n")[0],
           lastCommitSha: commit.sha,
-          compareUrl: `https://github.com/${owner}/${repo}/compare/${b.name}?expand=1`,
-          hasPR: prBranches.has(b.name),
-        };
-      })
-      .sort(
-        (a, b) =>
-          new Date(b.lastCommitDate).getTime() -
-          new Date(a.lastCommitDate).getTime()
-      );
+          compareUrl: `https://github.com/${owner}/${repo}/compare/${branch.name}?expand=1`,
+          hasPR: prBranches.has(branch.name),
+        });
+      }
+    }
+
+    return results.sort(
+      (a, b) =>
+        new Date(b.lastCommitDate).getTime() -
+        new Date(a.lastCommitDate).getTime()
+    );
   }
 }
 
