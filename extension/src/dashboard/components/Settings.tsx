@@ -1,16 +1,19 @@
 import { useState } from "react";
 import type { DashboardSettings } from "../../lib/types";
 import { createGitHubAPI } from "../../lib/github-api";
+import { useSettings } from "../hooks/useSettings";
+import { useDashboard } from "../context/DashboardContext";
 import { StyledFormField, StyledAlertBanner } from "../ui";
 import { XIcon } from "./Icons";
 
 interface SettingsProps {
-  settings: DashboardSettings;
-  onSave: (partial: Partial<DashboardSettings>) => Promise<DashboardSettings>;
   onClose: () => void;
 }
 
-export default function Settings({ settings, onSave, onClose }: SettingsProps) {
+export default function Settings({ onClose }: SettingsProps) {
+  const controller = useDashboard();
+  const { settings, update } = useSettings();
+
   const [form, setForm] = useState({ ...settings });
   const [detecting, setDetecting] = useState(false);
   const [newPath, setNewPath] = useState("");
@@ -61,7 +64,8 @@ export default function Settings({ settings, onSave, onClose }: SettingsProps) {
       setError("Token, owner, and repo name are required.");
       return;
     }
-    await onSave(form);
+    await update(form);
+    controller.refresh();
     setSaved(true);
   };
 

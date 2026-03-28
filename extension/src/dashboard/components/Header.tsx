@@ -1,20 +1,19 @@
+import { useDashboard } from "../context/DashboardContext";
+import { useSettings } from "../hooks/useSettings";
+import { useIsLoading } from "../hooks/useIsLoading";
 import { GitHubLogoIcon, RefreshIcon, GearIcon } from "./Icons";
 
 interface HeaderProps {
-  repoOwner: string;
-  repoName: string;
   onSettingsClick: () => void;
-  onRefresh: () => void;
-  loading: boolean;
 }
 
-export default function Header({
-  repoOwner,
-  repoName,
-  onSettingsClick,
-  onRefresh,
-  loading,
-}: HeaderProps) {
+export default function Header({ onSettingsClick }: HeaderProps) {
+  const controller = useDashboard();
+  const { settings } = useSettings();
+  const loading = useIsLoading();
+
+  const { repoOwner, repoName } = settings;
+
   return (
     <header className="border-b border-gh-border bg-gh-surface px-6 py-3 flex items-center justify-between">
       <div className="flex items-center gap-3">
@@ -47,7 +46,7 @@ export default function Header({
 
       <div className="flex items-center gap-2">
         <button
-          onClick={onRefresh}
+          onClick={() => controller.refresh()}
           disabled={loading}
           className="btn-icon"
           title="Refresh"

@@ -1,23 +1,25 @@
-import type { RecentBranch } from "../../lib/types";
+import type { BranchStore } from "../controllers";
+import { useBranchStoreState } from "../hooks/useBranchStore";
+import { useCheckout } from "../hooks/useCheckout";
+import { useSettings } from "../hooks/useSettings";
 import { timeAgo } from "../utils/time";
 import { StyledPanel, StyledPanelHeader, StyledAlertBanner, StyledEmptyState, StyledSpinner, StyledListRow, StyledBadge } from "../ui";
 import { GitBranchIcon } from "./Icons";
 
 interface BranchListProps {
-  branches: RecentBranch[];
-  loading: boolean;
-  error: string | null;
-  onCheckout?: (branch: string) => void;
-  showCheckout?: boolean;
+  store: BranchStore;
 }
 
-export default function BranchList({
-  branches,
-  loading,
-  error,
-  onCheckout,
-  showCheckout,
-}: BranchListProps) {
+export default function BranchList({ store }: BranchListProps) {
+  const state = useBranchStoreState(store);
+  const { open } = useCheckout();
+  const { settings } = useSettings();
+  const showCheckout = settings.repoPaths.length > 0;
+
+  const loading = state.status === "loading";
+  const error = state.status === "error" ? state.error : null;
+  const branches = state.status === "ready" ? state.data : [];
+
   return (
     <StyledPanel>
       <StyledPanelHeader
@@ -68,9 +70,9 @@ export default function BranchList({
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            {showCheckout && onCheckout && (
+            {showCheckout && (
               <button
-                onClick={() => onCheckout(branch.name)}
+                onClick={() => open(branch.name)}
                 className="opacity-0 group-hover:opacity-100 transition-opacity text-xs btn-secondary py-1 px-2"
                 title={`Checkout ${branch.name}`}
               >

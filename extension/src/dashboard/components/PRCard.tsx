@@ -1,5 +1,7 @@
 import type { EnrichedPR } from "../../lib/types";
 import { timeAgo } from "../utils/time";
+import { useCheckout } from "../hooks/useCheckout";
+import { useSettings } from "../hooks/useSettings";
 import { StyledListRow, StyledBadge, StyledAvatar, StyledAvatarStack } from "../ui";
 import {
   CheckIcon,
@@ -16,11 +18,13 @@ import {
 
 interface PRCardProps {
   pr: EnrichedPR;
-  onCheckout?: (branch: string) => void;
-  showCheckout?: boolean;
 }
 
-export default function PRCard({ pr, onCheckout, showCheckout }: PRCardProps) {
+export default function PRCard({ pr }: PRCardProps) {
+  const { open } = useCheckout();
+  const { settings } = useSettings();
+  const showCheckout = settings.repoPaths.length > 0;
+
   const approvalCount = pr.reviews.filter(
     (r) => r.state === "APPROVED"
   ).length;
@@ -95,9 +99,9 @@ export default function PRCard({ pr, onCheckout, showCheckout }: PRCardProps) {
       </div>
 
       <div className="flex items-center gap-3 shrink-0 self-center">
-        {showCheckout && onCheckout && (
+        {showCheckout && (
           <button
-            onClick={() => onCheckout(pr.head.ref)}
+            onClick={() => open(pr.head.ref)}
             className="opacity-0 group-hover:opacity-100 transition-opacity text-xs btn-secondary py-1 px-2"
             title={`Checkout ${pr.head.ref}`}
           >

@@ -1,21 +1,15 @@
 import { useState, useEffect } from "react";
 import type { LocalRepoInfo } from "../../lib/types";
+import { useCheckout } from "../hooks/useCheckout";
+import { useSettings } from "../hooks/useSettings";
 import { StyledModal, StyledPanelHeader, StyledAlertBanner, StyledEmptyState } from "../ui";
 import { XIcon, CheckIcon } from "./Icons";
 
-interface CheckoutModalProps {
-  branch: string;
-  serverUrl: string;
-  repoPaths: string[];
-  onClose: () => void;
-}
+export default function CheckoutModal() {
+  const { branch, close } = useCheckout();
+  const { settings } = useSettings();
+  const { localServerUrl: serverUrl, repoPaths } = settings;
 
-export default function CheckoutModal({
-  branch,
-  serverUrl,
-  repoPaths,
-  onClose,
-}: CheckoutModalProps) {
   const [repos, setRepos] = useState<LocalRepoInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -82,7 +76,7 @@ export default function CheckoutModal({
   };
 
   return (
-    <StyledModal onClose={onClose}>
+    <StyledModal onClose={close}>
       <StyledPanelHeader
         title={
           <div>
@@ -92,7 +86,7 @@ export default function CheckoutModal({
         }
         trailing={
           <button
-            onClick={onClose}
+            onClick={close}
             className="text-gh-muted hover:text-gh-text transition-colors"
           >
             <XIcon size={20} />

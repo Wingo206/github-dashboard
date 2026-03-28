@@ -1,24 +1,20 @@
-import type { EnrichedPR } from "../../lib/types";
+import type { PRStore } from "../controllers";
+import { usePRStoreState } from "../hooks/usePRStore";
 import { StyledPanel, StyledPanelHeader, StyledAlertBanner, StyledEmptyState, StyledSpinner } from "../ui";
 import PRCard from "./PRCard";
 
 interface PRListProps {
   title: string;
-  prs: EnrichedPR[];
-  loading: boolean;
-  error: string | null;
-  onCheckout?: (branch: string) => void;
-  showCheckout?: boolean;
+  store: PRStore;
 }
 
-export default function PRList({
-  title,
-  prs,
-  loading,
-  error,
-  onCheckout,
-  showCheckout,
-}: PRListProps) {
+export default function PRList({ title, store }: PRListProps) {
+  const state = usePRStoreState(store);
+
+  const loading = state.status === "loading";
+  const error = state.status === "error" ? state.error : null;
+  const prs = state.status === "ready" ? state.data : [];
+
   return (
     <StyledPanel>
       <StyledPanelHeader
@@ -43,12 +39,7 @@ export default function PRList({
       )}
 
       {prs.map((pr) => (
-        <PRCard
-          key={pr.id}
-          pr={pr}
-          onCheckout={onCheckout}
-          showCheckout={showCheckout}
-        />
+        <PRCard key={pr.id} pr={pr} />
       ))}
     </StyledPanel>
   );

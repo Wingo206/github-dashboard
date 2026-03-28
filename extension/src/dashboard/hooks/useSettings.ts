@@ -1,32 +1,27 @@
-import { useState, useEffect, useCallback } from "react";
-import { DashboardSettings, DEFAULT_SETTINGS } from "../../lib/types";
-import { loadSettings, saveSettings } from "../../lib/storage";
+import { useCallback } from "react";
+import { useSignalValue } from "../../lib/signals";
+import type { DashboardSettings } from "../../lib/types";
+import { useDashboard } from "../context/DashboardContext";
 
 export function useSettings() {
-  const [settings, setSettings] = useState<DashboardSettings>(DEFAULT_SETTINGS);
-  const [loading, setLoading] = useState(true);
+  const { settings: manager } = useDashboard();
 
-  useEffect(() => {
-    loadSettings().then((s) => {
-      setSettings(s);
-      setLoading(false);
-    });
-  }, []);
-
-  const update = useCallback(
-    async (partial: Partial<DashboardSettings>) => {
-      const updated = { ...settings, ...partial };
-      setSettings(updated);
-      await saveSettings(updated);
-      return updated;
-    },
-    [settings]
+  const snapshot = useSignalValue(
+    manager.changed,
+    useCallback(
+      () => ({
+        settings: manager.current,
+        loading: manager.loading,
+        isConfigured: manager.isConfigured,
+      }),
+      [manager],
+    ),
   );
 
-  const isConfigured =
-    settings.githubToken.length > 0 &&
-    settings.repoOwner.length > 0 &&
-    settings.repoName.length > 0;
+  const update = useCallback(
+    (partial: Partial<DashboardSettings>) => manager.update(partial),
+    [manager],
+  );
 
-  return { settings, update, loading, isConfigured };
+  return { ...snapshot, update };
 }
