@@ -4,10 +4,21 @@ import type {
   CheckRunsResponse,
   Review,
   GitHubBranch,
-  GitHubCommit,
   EnrichedPR,
   RecentBranch,
 } from "./types";
+
+interface ActivityEntry {
+  ref: string;
+  timestamp: string;
+  activity_type: string;
+  actor: { login: string };
+}
+
+interface GraphQLResponse<T> {
+  data?: T;
+  errors?: { message: string }[];
+}
 
 class GitHubAPI {
   private token: string;
@@ -31,6 +42,47 @@ class GitHubAPI {
       throw new Error(`GitHub API error: ${res.status} ${res.statusText}`);
     }
     return res.json();
+  }
+
+  private async requestWithLinks<T>(path: string): Promise<{ data: T; nextUrl: string | null }> {
+    const url = path.startsWith("http") ? path : `${this.baseUrl}${path}`;
+    const res = await fetch(url, {
+      headers: {
+        Accept: "application/vnd.github+json",
+        Authorization: `Bearer ${this.token}`,
+        "X-GitHub-Api-Version": "2022-11-28",
+      },
+    });
+    if (!res.ok) {
+      throw new Error(`GitHub API error: ${res.status} ${res.statusText}`);
+    }
+    const link = res.headers.get("link");
+    let nextUrl: string | null = null;
+    if (link) {
+      const match = link.match(/<([^>]+)>;\s*rel="next"/);
+      if (match) nextUrl = match[1];
+    }
+    const data = await res.json() as T;
+    return { data, nextUrl };
+  }
+
+  private async graphql<T>(query: string, variables: Record<string, unknown> = {}): Promise<T> {
+    const res = await fetch(`${this.baseUrl}/graphql`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${this.token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ query, variables }),
+    });
+    if (!res.ok) {
+      throw new Error(`GitHub GraphQL error: ${res.status} ${res.statusText}`);
+    }
+    const json = await res.json() as GraphQLResponse<T>;
+    if (json.errors?.length) {
+      throw new Error(`GitHub GraphQL error: ${json.errors[0].message}`);
+    }
+    return json.data!;
   }
 
   async getCurrentUser(): Promise<GitHubUser> {
@@ -89,33 +141,22 @@ class GitHubAPI {
     return branches;
   }
 
-  async getBranchesForHead(
+  private async getPushActivity(
     owner: string,
     repo: string,
-    commitSha: string
-  ): Promise<GitHubBranch[]> {
-    return this.request<GitHubBranch[]>(
-      `/repos/${owner}/${repo}/commits/${commitSha}/branches-where-head`
-    );
-  }
-
-  async getRecentCommits(
-    owner: string,
-    repo: string,
-    author: string,
-    since: string
-  ): Promise<GitHubCommit[]> {
-    const commits: GitHubCommit[] = [];
-    let page = 1;
-    while (true) {
-      const batch = await this.request<GitHubCommit[]>(
-        `/repos/${owner}/${repo}/commits?author=${author}&since=${since}&per_page=100&page=${page}`
-      );
-      commits.push(...batch);
-      if (batch.length < 100) break;
-      page++;
+    username: string,
+    timePeriod: string,
+  ): Promise<ActivityEntry[]> {
+    const activities: ActivityEntry[] = [];
+    let url: string | null =
+      `/repos/${owner}/${repo}/activity?activity_type=push&actor=${username}&time_period=${timePeriod}&per_page=100`;
+    while (url) {
+      const result: { data: ActivityEntry[]; nextUrl: string | null } =
+        await this.requestWithLinks<ActivityEntry[]>(url);
+      activities.push(...result.data);
+      url = result.nextUrl;
     }
-    return commits;
+    return activities;
   }
 
   async enrichPR(
@@ -158,41 +199,60 @@ class GitHubAPI {
     username: string,
     days: number = 7
   ): Promise<RecentBranch[]> {
-    const since = new Date();
-    since.setDate(since.getDate() - days);
+    const timePeriod = days <= 1 ? "day" : days <= 7 ? "week" : days <= 30 ? "month" : "quarter";
+    const activities = await this.getPushActivity(owner, repo, username, timePeriod);
+    const branchNames = [...new Set(
+      activities
+        .map((a) => a.ref?.replace("refs/heads/", ""))
+        .filter(Boolean)
+    )];
 
-    const [commits, openPRs] = await Promise.all([
-      this.getRecentCommits(owner, repo, username, since.toISOString()),
-      this.getPullRequests(owner, repo, "open"),
-    ]);
+    if (branchNames.length === 0) return [];
 
-    if (commits.length === 0) return [];
-
-    const uniqueShas = [...new Set(commits.map((c) => c.sha))];
-    const commitBySha = new Map(commits.map((c) => [c.sha, c]));
-    const prBranches = new Set(openPRs.map((pr) => pr.head.ref));
-
-    const branchResults = await Promise.all(
-      uniqueShas.map((sha) =>
-        this.getBranchesForHead(owner, repo, sha).catch(() => [])
-      )
-    );
-
-    const seen = new Set<string>();
+    const BATCH_SIZE = 50;
     const results: RecentBranch[] = [];
 
-    for (let i = 0; i < uniqueShas.length; i++) {
-      const commit = commitBySha.get(uniqueShas[i])!;
-      for (const branch of branchResults[i]) {
-        if (seen.has(branch.name)) continue;
-        seen.add(branch.name);
+    for (let start = 0; start < branchNames.length; start += BATCH_SIZE) {
+      const batch = branchNames.slice(start, start + BATCH_SIZE);
+      const fragments = batch.map((name, i) => `
+        b${i}: ref(qualifiedName: ${JSON.stringify(`refs/heads/${name}`)}) {
+          name
+          target {
+            ... on Commit {
+              oid
+              author { date }
+              message
+            }
+          }
+          associatedPullRequests(first: 1, states: [OPEN, CLOSED, MERGED]) {
+            totalCount
+          }
+        }
+      `);
+
+      const query = `query($owner: String!, $repo: String!) {
+        repository(owner: $owner, name: $repo) { ${fragments.join("")} }
+      }`;
+
+      type RefResult = {
+        name: string;
+        target: { oid: string; author: { date: string }; message: string };
+        associatedPullRequests: { totalCount: number };
+      } | null;
+      type RepoResult = { repository: Record<string, RefResult> };
+
+      const data = await this.graphql<RepoResult>(query, { owner, repo });
+
+      for (let i = 0; i < batch.length; i++) {
+        const ref = data.repository[`b${i}`];
+        if (!ref || ref.associatedPullRequests.totalCount > 0) continue;
+        const commit = ref.target;
         results.push({
-          name: branch.name,
-          lastCommitDate: commit.commit.author.date,
-          lastCommitMessage: commit.commit.message.split("\n")[0],
-          lastCommitSha: commit.sha,
-          compareUrl: `https://github.com/${owner}/${repo}/compare/${branch.name}?expand=1`,
-          hasPR: prBranches.has(branch.name),
+          name: ref.name,
+          lastCommitDate: commit.author.date,
+          lastCommitMessage: commit.message.split("\n")[0],
+          lastCommitSha: commit.oid,
+          compareUrl: `https://github.com/${owner}/${repo}/compare/${encodeURIComponent(ref.name)}?expand=1`,
         });
       }
     }

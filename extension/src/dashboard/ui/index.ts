@@ -8,3 +8,5 @@ export { StyledModal } from "./StyledModal";
 export { StyledSpinner } from "./StyledSpinner";
 export { StyledFormField } from "./StyledFormField";
 export { StyledAvatar, StyledAvatarStack } from "./StyledAvatar";
+export { TimeSincePicker } from "./TimeSincePicker";
+export type { TimeSinceOption } from "./TimeSincePicker";

@@ -103,7 +103,6 @@ export interface RecentBranch {
   lastCommitMessage: string;
   lastCommitSha: string;
   compareUrl: string;
-  hasPR: boolean;
 }
 
 export interface DashboardSettings {

@@ -5,11 +5,21 @@ import type { StoreState } from "./types";
 
 export class BranchStore {
   private _state: StoreState<RecentBranch[]> = { status: "loading" };
+  private _days: number = 7;
 
   readonly changed = new Signal<void>();
 
   get state(): StoreState<RecentBranch[]> {
     return this._state;
+  }
+
+  get days(): number {
+    return this._days;
+  }
+
+  set days(value: number) {
+    this._days = value;
+    this.changed.emit();
   }
 
   setLoading(): void {
@@ -35,7 +45,7 @@ export class BranchStore {
   ): Promise<void> {
     this.setLoading();
     try {
-      const branches = await api.getRecentBranches(owner, repo, username);
+      const branches = await api.getRecentBranches(owner, repo, username, this._days);
       this.setReady(branches);
     } catch (err) {
       this.setError(

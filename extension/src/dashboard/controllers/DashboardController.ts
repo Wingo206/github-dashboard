@@ -66,6 +66,20 @@ export class DashboardController {
     await Promise.all([prPromise, branchPromise]);
   }
 
+  async refreshBranches(days: number): Promise<void> {
+    if (!this.settings.isConfigured) return;
+
+    this.branches.days = days;
+
+    const { githubToken, repoOwner, repoName, username } =
+      this.settings.current;
+    const api = createGitHubAPI(githubToken);
+    const resolvedUser =
+      username || (await api.getCurrentUser()).login;
+
+    await this.branches.refresh(api, repoOwner, repoName, resolvedUser);
+  }
+
   dispose(): void {
     this.settings.dispose();
     this.myPRs.dispose();
