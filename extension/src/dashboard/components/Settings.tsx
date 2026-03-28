@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { DashboardSettings } from "../../lib/types";
 import { createGitHubAPI } from "../../lib/github-api";
+import { StyledFormField, StyledAlertBanner } from "../ui";
 import { XIcon } from "./Icons";
 
 interface SettingsProps {
@@ -77,7 +78,10 @@ export default function Settings({ settings, onSave, onClose }: SettingsProps) {
       </div>
 
       <div className="space-y-5">
-        <Field label="GitHub Personal Access Token">
+        <StyledFormField
+          label="GitHub Personal Access Token"
+          hint={undefined}
+        >
           <input
             type="password"
             value={form.githubToken}
@@ -89,10 +93,10 @@ export default function Settings({ settings, onSave, onClose }: SettingsProps) {
             Needs <code>repo</code> scope for private repos, or{" "}
             <code>public_repo</code> for public only.
           </p>
-        </Field>
+        </StyledFormField>
 
         <div className="grid grid-cols-2 gap-4">
-          <Field label="Repository Owner">
+          <StyledFormField label="Repository Owner">
             <input
               type="text"
               value={form.repoOwner}
@@ -100,8 +104,8 @@ export default function Settings({ settings, onSave, onClose }: SettingsProps) {
               placeholder="octocat"
               className="input-field"
             />
-          </Field>
-          <Field label="Repository Name">
+          </StyledFormField>
+          <StyledFormField label="Repository Name">
             <input
               type="text"
               value={form.repoName}
@@ -109,10 +113,10 @@ export default function Settings({ settings, onSave, onClose }: SettingsProps) {
               placeholder="my-repo"
               className="input-field"
             />
-          </Field>
+          </StyledFormField>
         </div>
 
-        <Field label="GitHub Username">
+        <StyledFormField label="GitHub Username">
           <div className="flex gap-2">
             <input
               type="text"
@@ -129,9 +133,12 @@ export default function Settings({ settings, onSave, onClose }: SettingsProps) {
               {detecting ? "Detecting..." : "Auto-detect"}
             </button>
           </div>
-        </Field>
+        </StyledFormField>
 
-        <Field label="Local Server URL">
+        <StyledFormField
+          label="Local Server URL"
+          hint="Optional. Used for local git operations like branch checkout."
+        >
           <input
             type="text"
             value={form.localServerUrl}
@@ -139,12 +146,9 @@ export default function Settings({ settings, onSave, onClose }: SettingsProps) {
             placeholder="http://localhost:9876"
             className="input-field"
           />
-          <p className="text-xs text-gh-muted mt-1">
-            Optional. Used for local git operations like branch checkout.
-          </p>
-        </Field>
+        </StyledFormField>
 
-        <Field label="Local Repository Paths">
+        <StyledFormField label="Local Repository Paths">
           <div className="space-y-2">
             {form.repoPaths.map((p, i) => (
               <div
@@ -176,12 +180,12 @@ export default function Settings({ settings, onSave, onClose }: SettingsProps) {
               </button>
             </div>
           </div>
-        </Field>
+        </StyledFormField>
 
         {error && (
-          <div className="text-sm text-gh-red bg-gh-red/10 border border-gh-red/30 rounded px-3 py-2">
+          <StyledAlertBanner variant="error">
             {error}
-          </div>
+          </StyledAlertBanner>
         )}
 
         <div className="flex items-center gap-3 pt-2">
@@ -193,23 +197,6 @@ export default function Settings({ settings, onSave, onClose }: SettingsProps) {
           )}
         </div>
       </div>
-    </div>
-  );
-}
-
-function Field({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div>
-      <label className="block text-sm font-medium text-gh-text mb-1.5">
-        {label}
-      </label>
-      {children}
     </div>
   );
 }

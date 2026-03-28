@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import type { LocalRepoInfo } from "../../lib/types";
+import { StyledModal, StyledPanelHeader, StyledAlertBanner, StyledEmptyState } from "../ui";
 import { XIcon, CheckIcon } from "./Icons";
 
 interface CheckoutModalProps {
@@ -81,93 +82,90 @@ export default function CheckoutModal({
   };
 
   return (
-    <div
-      className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
-      <div className="bg-gh-surface border border-gh-border rounded-lg w-full max-w-lg shadow-xl">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-gh-border">
+    <StyledModal onClose={onClose}>
+      <StyledPanelHeader
+        title={
           <div>
-            <h3 className="text-sm font-semibold text-gh-text">
-              Checkout Branch
-            </h3>
-            <code className="text-xs text-gh-accent">{branch}</code>
+            <span>Checkout Branch</span>
+            <code className="block text-xs text-gh-accent font-normal mt-0.5">{branch}</code>
           </div>
+        }
+        trailing={
           <button
             onClick={onClose}
             className="text-gh-muted hover:text-gh-text transition-colors"
           >
             <XIcon size={20} />
           </button>
-        </div>
+        }
+      />
 
-        <div className="p-4">
-          {error && (
-            <div className="text-sm text-gh-yellow bg-gh-yellow/10 border border-gh-yellow/30 rounded px-3 py-2 mb-3">
-              {error}
-            </div>
-          )}
+      <div className="p-4">
+        {error && (
+          <StyledAlertBanner variant="warning" className="mb-3">
+            {error}
+          </StyledAlertBanner>
+        )}
 
-          {loading ? (
-            <div className="text-center text-sm text-gh-muted py-4">
-              Fetching repository info...
-            </div>
-          ) : repos.length === 0 ? (
-            <div className="text-center text-sm text-gh-muted py-4">
-              No repositories configured. Add paths in Settings.
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {repos.map((repo) => {
-                const status = checkoutStatus[repo.path] || "idle";
-                return (
-                  <div
-                    key={repo.path}
-                    className="flex items-center gap-3 border border-gh-border rounded px-3 py-2.5"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <code className="text-sm text-gh-text block truncate">
-                        {repo.path}
-                      </code>
-                      <span className="text-xs text-gh-muted">
-                        Current: {repo.currentBranch}
-                        {repo.hasChanges && (
-                          <span className="text-gh-yellow ml-1">
-                            (has uncommitted changes)
-                          </span>
-                        )}
-                      </span>
-                    </div>
-                    <div className="shrink-0">
-                      {status === "success" ? (
-                        <span className="text-xs text-gh-green flex items-center gap-1">
-                          <CheckIcon size={14} />
-                          Done
+        {loading ? (
+          <StyledEmptyState className="py-4 px-0">
+            Fetching repository info...
+          </StyledEmptyState>
+        ) : repos.length === 0 ? (
+          <StyledEmptyState className="py-4 px-0">
+            No repositories configured. Add paths in Settings.
+          </StyledEmptyState>
+        ) : (
+          <div className="space-y-2">
+            {repos.map((repo) => {
+              const status = checkoutStatus[repo.path] || "idle";
+              return (
+                <div
+                  key={repo.path}
+                  className="flex items-center gap-3 border border-gh-border rounded px-3 py-2.5"
+                >
+                  <div className="flex-1 min-w-0">
+                    <code className="text-sm text-gh-text block truncate">
+                      {repo.path}
+                    </code>
+                    <span className="text-xs text-gh-muted">
+                      Current: {repo.currentBranch}
+                      {repo.hasChanges && (
+                        <span className="text-gh-yellow ml-1">
+                          (has uncommitted changes)
                         </span>
-                      ) : (
-                        <button
-                          onClick={() => handleCheckout(repo.path)}
-                          disabled={status === "loading"}
-                          className="text-xs btn-secondary py-1 px-2"
-                        >
-                          {status === "loading"
-                            ? "Checking out..."
-                            : "Checkout here"}
-                        </button>
                       )}
-                    </div>
-                    {checkoutErrors[repo.path] && (
-                      <div className="text-xs text-gh-red mt-1 w-full">
-                        {checkoutErrors[repo.path]}
-                      </div>
+                    </span>
+                  </div>
+                  <div className="shrink-0">
+                    {status === "success" ? (
+                      <span className="text-xs text-gh-green flex items-center gap-1">
+                        <CheckIcon size={14} />
+                        Done
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => handleCheckout(repo.path)}
+                        disabled={status === "loading"}
+                        className="text-xs btn-secondary py-1 px-2"
+                      >
+                        {status === "loading"
+                          ? "Checking out..."
+                          : "Checkout here"}
+                      </button>
                     )}
                   </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
+                  {checkoutErrors[repo.path] && (
+                    <div className="text-xs text-gh-red mt-1 w-full">
+                      {checkoutErrors[repo.path]}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
-    </div>
+    </StyledModal>
   );
 }

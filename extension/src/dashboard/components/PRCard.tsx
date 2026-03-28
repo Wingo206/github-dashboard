@@ -1,5 +1,6 @@
 import type { EnrichedPR } from "../../lib/types";
 import { timeAgo } from "../utils/time";
+import { StyledListRow, StyledBadge, StyledAvatar, StyledAvatarStack } from "../ui";
 import {
   CheckIcon,
   XIcon,
@@ -25,7 +26,7 @@ export default function PRCard({ pr, onCheckout, showCheckout }: PRCardProps) {
   ).length;
 
   return (
-    <div className="flex items-start gap-3 px-4 py-3 border-b border-gh-border hover:bg-gh-surface/60 transition-colors group">
+    <StyledListRow className="items-start">
       <div className="pt-0.5 shrink-0">
         <PRStatusIcon pr={pr} />
       </div>
@@ -42,27 +43,20 @@ export default function PRCard({ pr, onCheckout, showCheckout }: PRCardProps) {
           </a>
           <CheckStatusIcon status={pr.checkStatus} />
           {pr.labels.map((label) => (
-            <span
-              key={label.id}
-              className="text-xs px-1.5 py-0.5 rounded-full border font-medium"
-              style={{
-                color: `#${label.color}`,
-                borderColor: `#${label.color}40`,
-                backgroundColor: `#${label.color}18`,
-              }}
-            >
+            <StyledBadge key={label.id} color={label.color} pill>
               {label.name}
-            </span>
+            </StyledBadge>
           ))}
         </div>
 
         <div className="flex items-center gap-3 mt-1 text-xs text-gh-muted flex-wrap">
           <span>
             #{pr.number} opened {timeAgo(pr.created_at)} by{" "}
-            <img
+            <StyledAvatar
               src={pr.user.avatar_url}
               alt={pr.user.login}
-              className="inline-block w-4 h-4 rounded-full align-text-bottom"
+              size="sm"
+              className="inline-block align-text-bottom"
             />{" "}
             <span className="font-medium">{pr.user.login}</span>
           </span>
@@ -113,17 +107,18 @@ export default function PRCard({ pr, onCheckout, showCheckout }: PRCardProps) {
         )}
 
         {pr.assignees.length > 0 && (
-          <div className="flex -space-x-1.5">
+          <StyledAvatarStack>
             {pr.assignees.slice(0, 3).map((a) => (
-              <img
+              <StyledAvatar
                 key={a.login}
                 src={a.avatar_url}
                 alt={a.login}
                 title={a.login}
-                className="w-5 h-5 rounded-full border border-gh-bg"
+                size="md"
+                bordered
               />
             ))}
-          </div>
+          </StyledAvatarStack>
         )}
 
         {pr.comments > 0 && (
@@ -138,7 +133,7 @@ export default function PRCard({ pr, onCheckout, showCheckout }: PRCardProps) {
           </a>
         )}
       </div>
-    </div>
+    </StyledListRow>
   );
 }
 

@@ -1,6 +1,7 @@
 import type { RecentBranch } from "../../lib/types";
 import { timeAgo } from "../utils/time";
-import { SpinnerIcon, GitBranchIcon } from "./Icons";
+import { StyledPanel, StyledPanelHeader, StyledAlertBanner, StyledEmptyState, StyledSpinner, StyledListRow, StyledBadge } from "../ui";
+import { GitBranchIcon } from "./Icons";
 
 interface BranchListProps {
   branches: RecentBranch[];
@@ -18,44 +19,34 @@ export default function BranchList({
   showCheckout,
 }: BranchListProps) {
   return (
-    <div className="border border-gh-border rounded-md overflow-hidden">
-      <div className="bg-gh-surface px-4 py-3 border-b border-gh-border flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-gh-text">
-          Recent Branches (last 7 days)
-        </h3>
-        <span className="text-xs text-gh-muted">
-          {loading
+    <StyledPanel>
+      <StyledPanelHeader
+        title="Recent Branches (last 7 days)"
+        trailing={
+          loading
             ? "Loading..."
-            : `${branches.length} branch${branches.length !== 1 ? "es" : ""}`}
-        </span>
-      </div>
+            : `${branches.length} branch${branches.length !== 1 ? "es" : ""}`
+        }
+      />
 
       {error && (
-        <div className="px-4 py-3 text-sm text-gh-red bg-gh-red/5 border-b border-gh-border">
+        <StyledAlertBanner variant="error" inline>
           {error}
-        </div>
+        </StyledAlertBanner>
       )}
 
       {!loading && !error && branches.length === 0 && (
-        <div className="px-4 py-8 text-center text-sm text-gh-muted">
-          No recently pushed branches found.
-        </div>
+        <StyledEmptyState>No recently pushed branches found.</StyledEmptyState>
       )}
 
       {loading && branches.length === 0 && (
-        <div className="px-4 py-8 text-center text-sm text-gh-muted">
-          <div className="flex items-center justify-center gap-2">
-            <SpinnerIcon className="animate-spin h-4 w-4 text-gh-muted" />
-            <span>Fetching branches...</span>
-          </div>
-        </div>
+        <StyledEmptyState>
+          <StyledSpinner message="Fetching branches..." />
+        </StyledEmptyState>
       )}
 
       {branches.map((branch) => (
-        <div
-          key={branch.name}
-          className="flex items-center gap-3 px-4 py-3 border-b border-gh-border last:border-b-0 hover:bg-gh-surface/60 transition-colors group"
-        >
+        <StyledListRow key={branch.name}>
           <GitBranchIcon className="text-gh-muted shrink-0" />
 
           <div className="flex-1 min-w-0">
@@ -64,9 +55,9 @@ export default function BranchList({
                 {branch.name}
               </code>
               {branch.hasPR && (
-                <span className="text-xs px-1.5 py-0.5 rounded bg-gh-purple/15 text-gh-purple border border-gh-purple/30">
+                <StyledBadge className="bg-gh-purple/15 text-gh-purple border-gh-purple/30">
                   Has PR
-                </span>
+                </StyledBadge>
               )}
             </div>
             <div className="text-xs text-gh-muted mt-0.5 truncate">
@@ -98,8 +89,8 @@ export default function BranchList({
               </a>
             )}
           </div>
-        </div>
+        </StyledListRow>
       ))}
-    </div>
+    </StyledPanel>
   );
 }
