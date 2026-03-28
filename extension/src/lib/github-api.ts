@@ -6,6 +6,7 @@ import type {
   GitHubBranch,
   EnrichedPR,
   RecentBranch,
+  RepoActivity,
 } from "./types";
 
 interface ActivityEntry {
@@ -153,6 +154,24 @@ class GitHubAPI {
     while (url) {
       const result: { data: ActivityEntry[]; nextUrl: string | null } =
         await this.requestWithLinks<ActivityEntry[]>(url);
+      activities.push(...result.data);
+      url = result.nextUrl;
+    }
+    return activities;
+  }
+
+  async getRepoActivity(
+    owner: string,
+    repo: string,
+    username: string,
+    timePeriod: string,
+  ): Promise<RepoActivity[]> {
+    const activities: RepoActivity[] = [];
+    let url: string | null =
+      `/repos/${owner}/${repo}/activity?actor=${username}&time_period=${timePeriod}&per_page=100`;
+    while (url) {
+      const result: { data: RepoActivity[]; nextUrl: string | null } =
+        await this.requestWithLinks<RepoActivity[]>(url);
       activities.push(...result.data);
       url = result.nextUrl;
     }

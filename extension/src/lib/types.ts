@@ -105,6 +105,24 @@ export interface RecentBranch {
   compareUrl: string;
 }
 
+export type ActivityType =
+  | "push"
+  | "force_push"
+  | "branch_creation"
+  | "branch_deletion"
+  | "pr_merge"
+  | "merge_queue_merge";
+
+export interface RepoActivity {
+  id: number;
+  ref: string;
+  timestamp: string;
+  activity_type: ActivityType;
+  actor: { login: string; avatar_url: string };
+  before: string;
+  after: string;
+}
+
 export interface DashboardSettings {
   githubToken: string;
   repoOwner: string;

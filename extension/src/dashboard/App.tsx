@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import Header from "./components/Header";
 import PRList from "./components/PRList";
 import BranchList from "./components/BranchList";
+import ActivityList from "./components/ActivityList";
 import Settings from "./components/Settings";
 import CheckoutModal from "./components/CheckoutModal";
 import { useSettings } from "./hooks/useSettings";
@@ -49,6 +50,7 @@ export default function App() {
             <PRList title="My Pull Requests" store={controller.myPRs} />
             <PRList title="Assigned to Me" store={controller.assignedPRs} />
             <BranchList store={controller.branches} />
+            <ActivityList store={controller.activity} />
           </div>
         )}
       </main>

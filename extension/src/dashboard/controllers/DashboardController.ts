@@ -2,6 +2,7 @@ import { createGitHubAPI } from "../../lib/github-api";
 import { SettingsManager } from "./SettingsManager";
 import { PRStore } from "./PRStore";
 import { BranchStore } from "./BranchStore";
+import { ActivityStore } from "./ActivityStore";
 import { CheckoutController } from "./CheckoutController";
 
 export class DashboardController {
@@ -9,6 +10,7 @@ export class DashboardController {
   readonly myPRs = new PRStore();
   readonly assignedPRs = new PRStore();
   readonly branches = new BranchStore();
+  readonly activity = new ActivityStore();
   readonly checkout = new CheckoutController();
 
   async init(): Promise<void> {
@@ -63,7 +65,14 @@ export class DashboardController {
       resolvedUser,
     );
 
-    await Promise.all([prPromise, branchPromise]);
+    const activityPromise = this.activity.refresh(
+      api,
+      repoOwner,
+      repoName,
+      resolvedUser,
+    );
+
+    await Promise.all([prPromise, branchPromise, activityPromise]);
   }
 
   async refreshBranches(days: number): Promise<void> {
@@ -80,11 +89,26 @@ export class DashboardController {
     await this.branches.refresh(api, repoOwner, repoName, resolvedUser);
   }
 
+  async refreshActivity(days: number): Promise<void> {
+    if (!this.settings.isConfigured) return;
+
+    this.activity.days = days;
+
+    const { githubToken, repoOwner, repoName, username } =
+      this.settings.current;
+    const api = createGitHubAPI(githubToken);
+    const resolvedUser =
+      username || (await api.getCurrentUser()).login;
+
+    await this.activity.refresh(api, repoOwner, repoName, resolvedUser);
+  }
+
   dispose(): void {
     this.settings.dispose();
     this.myPRs.dispose();
     this.assignedPRs.dispose();
     this.branches.dispose();
+    this.activity.dispose();
     this.checkout.dispose();
   }
 }
