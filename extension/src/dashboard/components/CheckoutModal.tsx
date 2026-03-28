@@ -1,0 +1,173 @@
+import { useState, useEffect } from "react";
+import type { LocalRepoInfo } from "../../lib/types";
+import { XIcon, CheckIcon } from "./Icons";
+
+interface CheckoutModalProps {
+  branch: string;
+  serverUrl: string;
+  repoPaths: string[];
+  onClose: () => void;
+}
+
+export default function CheckoutModal({
+  branch,
+  serverUrl,
+  repoPaths,
+  onClose,
+}: CheckoutModalProps) {
+  const [repos, setRepos] = useState<LocalRepoInfo[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [checkoutStatus, setCheckoutStatus] = useState<
+    Record<string, "idle" | "loading" | "success" | "error">
+  >({});
+  const [checkoutErrors, setCheckoutErrors] = useState<Record<string, string>>(
+    {}
+  );
+
+  useEffect(() => {
+    fetchRepos();
+  }, []);
+
+  const fetchRepos = async () => {
+    try {
+      const res = await fetch(`${serverUrl}/repos`);
+      if (!res.ok) throw new Error("Server not reachable");
+      const data = await res.json();
+      setRepos(data.repos);
+    } catch {
+      if (repoPaths.length > 0) {
+        setRepos(
+          repoPaths.map((p) => ({
+            path: p,
+            currentBranch: "unknown",
+            hasChanges: false,
+          }))
+        );
+      }
+      setError(
+        "Could not connect to local server. Make sure the companion server is running."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCheckout = async (repoPath: string) => {
+    setCheckoutStatus((s) => ({ ...s, [repoPath]: "loading" }));
+    setCheckoutErrors((e) => ({ ...e, [repoPath]: "" }));
+
+    try {
+      const res = await fetch(`${serverUrl}/checkout`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ repoPath, branch }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Checkout failed");
+      }
+
+      setCheckoutStatus((s) => ({ ...s, [repoPath]: "success" }));
+      fetchRepos();
+    } catch (err) {
+      setCheckoutStatus((s) => ({ ...s, [repoPath]: "error" }));
+      setCheckoutErrors((e) => ({
+        ...e,
+        [repoPath]: err instanceof Error ? err.message : "Checkout failed",
+      }));
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div className="bg-gh-surface border border-gh-border rounded-lg w-full max-w-lg shadow-xl">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-gh-border">
+          <div>
+            <h3 className="text-sm font-semibold text-gh-text">
+              Checkout Branch
+            </h3>
+            <code className="text-xs text-gh-accent">{branch}</code>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-gh-muted hover:text-gh-text transition-colors"
+          >
+            <XIcon size={20} />
+          </button>
+        </div>
+
+        <div className="p-4">
+          {error && (
+            <div className="text-sm text-gh-yellow bg-gh-yellow/10 border border-gh-yellow/30 rounded px-3 py-2 mb-3">
+              {error}
+            </div>
+          )}
+
+          {loading ? (
+            <div className="text-center text-sm text-gh-muted py-4">
+              Fetching repository info...
+            </div>
+          ) : repos.length === 0 ? (
+            <div className="text-center text-sm text-gh-muted py-4">
+              No repositories configured. Add paths in Settings.
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {repos.map((repo) => {
+                const status = checkoutStatus[repo.path] || "idle";
+                return (
+                  <div
+                    key={repo.path}
+                    className="flex items-center gap-3 border border-gh-border rounded px-3 py-2.5"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <code className="text-sm text-gh-text block truncate">
+                        {repo.path}
+                      </code>
+                      <span className="text-xs text-gh-muted">
+                        Current: {repo.currentBranch}
+                        {repo.hasChanges && (
+                          <span className="text-gh-yellow ml-1">
+                            (has uncommitted changes)
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                    <div className="shrink-0">
+                      {status === "success" ? (
+                        <span className="text-xs text-gh-green flex items-center gap-1">
+                          <CheckIcon size={14} />
+                          Done
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => handleCheckout(repo.path)}
+                          disabled={status === "loading"}
+                          className="text-xs btn-secondary py-1 px-2"
+                        >
+                          {status === "loading"
+                            ? "Checking out..."
+                            : "Checkout here"}
+                        </button>
+                      )}
+                    </div>
+                    {checkoutErrors[repo.path] && (
+                      <div className="text-xs text-gh-red mt-1 w-full">
+                        {checkoutErrors[repo.path]}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
