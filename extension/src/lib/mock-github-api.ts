@@ -114,12 +114,12 @@ const ACTIVITY_TYPES: ActivityType[] = [
 ];
 
 function buildMockPRs(): EnrichedPR[] {
-  const count = 18;
+  const count = 30;
   const prs: EnrichedPR[] = [];
 
   for (let i = 0; i < count; i++) {
     const author = i < 8 ? CURRENT_USER : randomFrom(MOCK_USERS.slice(1));
-    const isAssignedToMe = i >= 8 && i < 14;
+    const isAssignedToMe = i >= 8 && i < 26;
     const assignees = isAssignedToMe
       ? [CURRENT_USER, ...(Math.random() > 0.5 ? [randomFrom(MOCK_USERS.slice(1))] : [])]
       : [author];

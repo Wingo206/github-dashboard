@@ -29,6 +29,18 @@ export default function PRCard({ pr }: PRCardProps) {
     (r) => r.state === "APPROVED"
   ).length;
 
+  const visibleLabels = pr.labels.slice(0, 2);
+  const hiddenLabelCount = pr.labels.length - visibleLabels.length;
+
+  const metadataParts = [
+    `#${pr.number} by ${pr.user.login}`,
+    approvalCount > 0 ? `${approvalCount} approval${approvalCount !== 1 ? "s" : ""}` : null,
+    pr.reviewDecision === "changes_requested" ? "Changes requested" : null,
+    `updated ${timeAgo(pr.updated_at)}`,
+    pr.taskProgress ? `${pr.taskProgress.done}/${pr.taskProgress.total} tasks` : null,
+    `→ ${pr.base.ref}`,
+  ].filter(Boolean).join(" · ");
+
   return (
     <StyledListRow className="items-start">
       <div className="pt-0.5 shrink-0">
@@ -36,25 +48,37 @@ export default function PRCard({ pr }: PRCardProps) {
       </div>
 
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2 overflow-hidden">
           <a
             href={pr.html_url}
             target="_blank"
             rel="noopener noreferrer"
-            className="font-semibold text-gh-text hover:text-gh-accent transition-colors leading-tight"
+            className="font-semibold text-gh-text hover:text-gh-accent transition-colors leading-tight truncate shrink"
+            title={pr.title}
           >
             {pr.title}
           </a>
           <CheckStatusIcon status={pr.checkStatus} />
-          {pr.labels.map((label) => (
-            <StyledBadge key={label.id} color={label.color} pill>
+          {visibleLabels.map((label) => (
+            <StyledBadge key={label.id} color={label.color} pill className="shrink-0">
               {label.name}
             </StyledBadge>
           ))}
+          {hiddenLabelCount > 0 && (
+            <span
+              className="text-xs text-gh-muted shrink-0"
+              title={pr.labels.slice(2).map((l) => l.name).join(", ")}
+            >
+              +{hiddenLabelCount}
+            </span>
+          )}
         </div>
 
-        <div className="flex items-center gap-3 mt-1 text-xs text-gh-muted flex-wrap">
-          <span>
+        <div
+          className="flex items-center gap-3 mt-1 text-xs text-gh-muted overflow-hidden whitespace-nowrap"
+          title={metadataParts}
+        >
+          <span className="shrink-0">
             #{pr.number} opened {timeAgo(pr.created_at)} by{" "}
             <StyledAvatar
               src={pr.user.avatar_url}
@@ -66,29 +90,29 @@ export default function PRCard({ pr }: PRCardProps) {
           </span>
 
           {approvalCount > 0 && (
-            <span className="text-gh-green flex items-center gap-0.5">
+            <span className="text-gh-green flex items-center gap-0.5 shrink-0">
               <CheckIcon size={14} />
               {approvalCount} {approvalCount === 1 ? "approval" : "approvals"}
             </span>
           )}
 
           {pr.reviewDecision === "changes_requested" && (
-            <span className="text-gh-red flex items-center gap-0.5">
+            <span className="text-gh-red flex items-center gap-0.5 shrink-0">
               <XIcon size={14} />
               Changes requested
             </span>
           )}
 
-          <span>updated {timeAgo(pr.updated_at)}</span>
+          <span className="shrink-0">updated {timeAgo(pr.updated_at)}</span>
 
           {pr.taskProgress && (
-            <span className="flex items-center gap-1">
+            <span className="flex items-center gap-1 shrink-0">
               <TaskListIcon size={14} className="text-gh-muted" />
               {pr.taskProgress.done}/{pr.taskProgress.total} tasks
             </span>
           )}
 
-          <span className="inline-flex items-center gap-1 bg-gh-surface border border-gh-border rounded px-1.5 py-0.5">
+          <span className="inline-flex items-center gap-1 bg-gh-surface border border-gh-border rounded px-1.5 py-0.5 shrink-0">
             <TargetBranchIcon size={12} className="text-gh-muted" />
             To{" "}
             <span className="font-mono text-xs text-gh-accent">

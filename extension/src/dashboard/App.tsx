@@ -33,27 +33,37 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gh-bg">
+    <div className="h-screen bg-gh-bg overflow-hidden">
       <Header
         onSettingsClick={() => setTab(tab === "settings" ? "dashboard" : "settings")}
       />
 
-      <main className="max-w-5xl mx-auto px-6 py-6">
-        {tab === "settings" ? (
+      {tab === "settings" ? (
+        <main className="max-w-5xl mx-auto px-6 py-6">
           <Settings
             onClose={() => {
               if (isConfigured) setTab("dashboard");
             }}
           />
-        ) : (
-          <div className="space-y-6">
-            <PRList title="My Pull Requests" store={controller.myPRs} />
+        </main>
+      ) : (
+        <main className="grid grid-cols-3 gap-6 px-6 py-6 h-[calc(100vh-49px)]">
+          <div className="overflow-hidden">
             <PRList title="Assigned to Me" store={controller.assignedPRs} />
-            <BranchList store={controller.branches} />
-            <ActivityList store={controller.activity} />
           </div>
-        )}
-      </main>
+          <div className="overflow-hidden">
+            <PRList title="My Pull Requests" store={controller.myPRs} />
+          </div>
+          <div className="flex flex-col gap-6 h-full min-h-0">
+            <div className="flex-1 min-h-0">
+              <BranchList store={controller.branches} />
+            </div>
+            <div className="flex-1 min-h-0">
+              <ActivityList store={controller.activity} />
+            </div>
+          </div>
+        </main>
+      )}
 
       {checkoutBranch && <CheckoutModal />}
     </div>

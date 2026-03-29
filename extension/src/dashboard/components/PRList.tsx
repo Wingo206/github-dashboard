@@ -1,7 +1,9 @@
 import type { PRStore } from "../controllers";
 import { usePRStoreState } from "../hooks/usePRStore";
-import { StyledPanel, StyledPanelHeader, StyledAlertBanner, StyledEmptyState, StyledSpinner } from "../ui";
+import { StyledPanelHeader, SimplePaginatedList, ListSkeleton, ListError, ListEmpty } from "../ui";
 import PRCard from "./PRCard";
+
+const PR_ITEM_HEIGHT = 72;
 
 interface PRListProps {
   title: string;
@@ -10,37 +12,24 @@ interface PRListProps {
 
 export default function PRList({ title, store }: PRListProps) {
   const state = usePRStoreState(store);
+  const header = <StyledPanelHeader title={title} />;
 
-  const loading = state.status === "loading";
-  const error = state.status === "error" ? state.error : null;
-  const prs = state.status === "ready" ? state.data : [];
+  if (state.status === "loading")
+    return <ListSkeleton header={header} message="Fetching pull requests..." className="h-full" />;
+  if (state.status === "error")
+    return <ListError header={header} error={state.error} className="h-full" />;
+  if (state.data.length === 0)
+    return <ListEmpty header={header} message="No pull requests found." className="h-full" />;
 
   return (
-    <StyledPanel>
-      <StyledPanelHeader
-        title={title}
-        trailing={loading ? "Loading..." : `${prs.length} pull request${prs.length !== 1 ? "s" : ""}`}
-      />
-
-      {error && (
-        <StyledAlertBanner variant="error" inline>
-          {error}
-        </StyledAlertBanner>
-      )}
-
-      {!loading && !error && prs.length === 0 && (
-        <StyledEmptyState>No pull requests found.</StyledEmptyState>
-      )}
-
-      {loading && prs.length === 0 && (
-        <StyledEmptyState>
-          <StyledSpinner message="Fetching pull requests..." />
-        </StyledEmptyState>
-      )}
-
-      {prs.map((pr) => (
-        <PRCard key={pr.id} pr={pr} />
-      ))}
-    </StyledPanel>
+    <SimplePaginatedList
+      title={title}
+      itemLabel="pull request"
+      items={state.data}
+      renderItem={(pr) => <PRCard pr={pr} />}
+      keyExtractor={(pr) => pr.id}
+      itemHeight={PR_ITEM_HEIGHT}
+      className="h-full"
+    />
   );
 }

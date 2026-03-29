@@ -34,3 +34,23 @@ body {
       transition-colors disabled:opacity-50;
   }
 }
+
+/* Thin, GitHub-themed scrollbar for scrollable areas */
+.styled-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.styled-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.styled-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(139, 148, 158, 0.3);
+  border-radius: 3px;
+}
+.styled-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(139, 148, 158, 0.5);
+}
+/* Firefox */
+.styled-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(139, 148, 158, 0.3) transparent;
+}

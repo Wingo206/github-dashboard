@@ -2,6 +2,7 @@ import { useDashboard } from "../context/DashboardContext";
 import { useSettings } from "../hooks/useSettings";
 import { useIsLoading } from "../hooks/useIsLoading";
 import { useDebugMode } from "../hooks/useDebugMode";
+import { StyledSmallButton } from "../ui";
 import { GitHubLogoIcon, RefreshIcon, GearIcon } from "./Icons";
 
 interface HeaderProps {
@@ -47,17 +48,14 @@ export default function Header({ onSettingsClick }: HeaderProps) {
       </div>
 
       <div className="flex items-center gap-2">
-        <button
+        <StyledSmallButton
           onClick={() => controller.setDebugMode(!debugMode)}
-          className={`text-xs px-2 py-1 rounded border transition-colors ${
-            debugMode
-              ? "bg-yellow-400/15 text-yellow-400 border-yellow-400/40"
-              : "text-gh-muted border-gh-border hover:text-gh-text hover:border-gh-text/40"
-          }`}
+          active={debugMode}
+          className={debugMode ? "bg-yellow-400/15 text-yellow-400 border-yellow-400/40" : undefined}
           title="Toggle mock data for layout testing"
         >
-          {debugMode ? "Mock" : "Mock"}
-        </button>
+          Mock
+        </StyledSmallButton>
 
         <button
           onClick={() => controller.refresh()}
