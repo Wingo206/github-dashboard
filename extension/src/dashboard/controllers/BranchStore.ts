@@ -1,6 +1,6 @@
 import { Signal } from "../../lib/signals";
 import type { RecentBranch } from "../../lib/types";
-import type { GitHubAPI } from "../../lib/github-api";
+import type { IGitHubAPI } from "../../lib/github-api";
 import type { StoreState } from "./types";
 
 export class BranchStore {
@@ -38,7 +38,7 @@ export class BranchStore {
   }
 
   async refresh(
-    api: GitHubAPI,
+    api: IGitHubAPI,
     owner: string,
     repo: string,
     username: string,

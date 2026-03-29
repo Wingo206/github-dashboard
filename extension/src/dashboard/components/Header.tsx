@@ -1,6 +1,7 @@
 import { useDashboard } from "../context/DashboardContext";
 import { useSettings } from "../hooks/useSettings";
 import { useIsLoading } from "../hooks/useIsLoading";
+import { useDebugMode } from "../hooks/useDebugMode";
 import { GitHubLogoIcon, RefreshIcon, GearIcon } from "./Icons";
 
 interface HeaderProps {
@@ -11,6 +12,7 @@ export default function Header({ onSettingsClick }: HeaderProps) {
   const controller = useDashboard();
   const { settings } = useSettings();
   const loading = useIsLoading();
+  const debugMode = useDebugMode();
 
   const { repoOwner, repoName } = settings;
 
@@ -45,6 +47,18 @@ export default function Header({ onSettingsClick }: HeaderProps) {
       </div>
 
       <div className="flex items-center gap-2">
+        <button
+          onClick={() => controller.setDebugMode(!debugMode)}
+          className={`text-xs px-2 py-1 rounded border transition-colors ${
+            debugMode
+              ? "bg-yellow-400/15 text-yellow-400 border-yellow-400/40"
+              : "text-gh-muted border-gh-border hover:text-gh-text hover:border-gh-text/40"
+          }`}
+          title="Toggle mock data for layout testing"
+        >
+          {debugMode ? "Mock" : "Mock"}
+        </button>
+
         <button
           onClick={() => controller.refresh()}
           disabled={loading}

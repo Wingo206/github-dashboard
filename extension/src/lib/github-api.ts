@@ -3,7 +3,6 @@ import type {
   GitHubUser,
   CheckRunsResponse,
   Review,
-  GitHubBranch,
   EnrichedPR,
   RecentBranch,
   RepoActivity,
@@ -21,7 +20,14 @@ interface GraphQLResponse<T> {
   errors?: { message: string }[];
 }
 
-class GitHubAPI {
+export interface IGitHubAPI {
+  getCurrentUser(): Promise<GitHubUser>;
+  getEnrichedPullRequests(owner: string, repo: string): Promise<EnrichedPR[]>;
+  getRecentBranches(owner: string, repo: string, username: string, days?: number): Promise<RecentBranch[]>;
+  getRepoActivity(owner: string, repo: string, username: string, days: number): Promise<RepoActivity[]>;
+}
+
+class GitHubAPI implements IGitHubAPI {
   private token: string;
   private baseUrl = "https://api.github.com";
 
@@ -90,7 +96,7 @@ class GitHubAPI {
     return this.request<GitHubUser>("/user");
   }
 
-  async getPullRequests(
+  private async getPullRequests(
     owner: string,
     repo: string,
     state: "open" | "closed" | "all" = "open"
@@ -108,7 +114,7 @@ class GitHubAPI {
     return prs;
   }
 
-  async getCheckRuns(
+  private async getCheckRuns(
     owner: string,
     repo: string,
     ref: string
@@ -118,7 +124,7 @@ class GitHubAPI {
     );
   }
 
-  async getReviews(
+  private async getReviews(
     owner: string,
     repo: string,
     prNumber: number
@@ -126,20 +132,6 @@ class GitHubAPI {
     return this.request<Review[]>(
       `/repos/${owner}/${repo}/pulls/${prNumber}/reviews`
     );
-  }
-
-  async getBranches(owner: string, repo: string): Promise<GitHubBranch[]> {
-    const branches: GitHubBranch[] = [];
-    let page = 1;
-    while (true) {
-      const batch = await this.request<GitHubBranch[]>(
-        `/repos/${owner}/${repo}/branches?per_page=100&page=${page}`
-      );
-      branches.push(...batch);
-      if (batch.length < 100) break;
-      page++;
-    }
-    return branches;
   }
 
   private async getPushActivity(
@@ -164,8 +156,9 @@ class GitHubAPI {
     owner: string,
     repo: string,
     username: string,
-    timePeriod: string,
+    days: number,
   ): Promise<RepoActivity[]> {
+    const timePeriod = daysToTimePeriod(days);
     const activities: RepoActivity[] = [];
     let url: string | null =
       `/repos/${owner}/${repo}/activity?actor=${username}&time_period=${timePeriod}&per_page=100`;
@@ -178,7 +171,7 @@ class GitHubAPI {
     return activities;
   }
 
-  async enrichPR(
+  private async enrichPR(
     owner: string,
     repo: string,
     pr: GitHubPullRequest
@@ -204,12 +197,20 @@ class GitHubAPI {
     };
   }
 
-  async enrichPRs(
+  private async enrichPRs(
     owner: string,
     repo: string,
     prs: GitHubPullRequest[]
   ): Promise<EnrichedPR[]> {
     return Promise.all(prs.map((pr) => this.enrichPR(owner, repo, pr)));
+  }
+
+  async getEnrichedPullRequests(
+    owner: string,
+    repo: string,
+  ): Promise<EnrichedPR[]> {
+    const prs = await this.getPullRequests(owner, repo);
+    return this.enrichPRs(owner, repo, prs);
   }
 
   async getRecentBranches(
@@ -218,8 +219,7 @@ class GitHubAPI {
     username: string,
     days: number = 7
   ): Promise<RecentBranch[]> {
-    const timePeriod = days <= 1 ? "day" : days <= 7 ? "week" : days <= 30 ? "month" : "quarter";
-    const activities = await this.getPushActivity(owner, repo, username, timePeriod);
+    const activities = await this.getPushActivity(owner, repo, username, daysToTimePeriod(days));
     const branchNames = [...new Set(
       activities
         .map((a) => a.ref?.replace("refs/heads/", ""))
@@ -284,6 +284,10 @@ class GitHubAPI {
   }
 }
 
+function daysToTimePeriod(days: number): string {
+  return days <= 1 ? "day" : days <= 7 ? "week" : days <= 30 ? "month" : "quarter";
+}
+
 function deriveCheckStatus(
   resp: CheckRunsResponse
 ): EnrichedPR["checkStatus"] {
@@ -334,8 +338,6 @@ function parseTaskProgress(
   return { done, total };
 }
 
-export function createGitHubAPI(token: string): GitHubAPI {
+export function createGitHubAPI(token: string): IGitHubAPI {
   return new GitHubAPI(token);
 }
-
-export type { GitHubAPI };

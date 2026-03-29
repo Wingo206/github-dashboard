@@ -1,4 +1,3 @@
-import { createGitHubAPI } from "../../lib/github-api";
 import { SettingsManager } from "./SettingsManager";
 import { PRStore } from "./PRStore";
 import { BranchStore } from "./BranchStore";
@@ -13,6 +12,15 @@ export class DashboardController {
   readonly activity = new ActivityStore();
   readonly checkout = new CheckoutController();
 
+  get debugMode(): boolean {
+    return this.settings.debugMode;
+  }
+
+  setDebugMode(enabled: boolean): void {
+    this.settings.setDebugMode(enabled);
+    this.refresh();
+  }
+
   async init(): Promise<void> {
     await this.settings.init();
     if (this.settings.isConfigured) {
@@ -23,20 +31,16 @@ export class DashboardController {
   async refresh(): Promise<void> {
     if (!this.settings.isConfigured) return;
 
-    const { githubToken, repoOwner, repoName, username } =
-      this.settings.current;
-    const api = createGitHubAPI(githubToken);
+    const api = this.settings.createApi();
+    const { repoOwner, repoName } = this.settings.current;
+    const resolvedUser = await this.settings.resolveUser(api);
 
     this.myPRs.setLoading();
     this.assignedPRs.setLoading();
 
-    const resolvedUser =
-      username || (await api.getCurrentUser()).login;
-
     const prPromise = (async () => {
       try {
-        const prs = await api.getPullRequests(repoOwner, repoName);
-        const enriched = await api.enrichPRs(repoOwner, repoName, prs);
+        const enriched = await api.getEnrichedPullRequests(repoOwner, repoName);
 
         this.myPRs.setReady(
           enriched.filter(
@@ -80,11 +84,9 @@ export class DashboardController {
 
     this.branches.days = days;
 
-    const { githubToken, repoOwner, repoName, username } =
-      this.settings.current;
-    const api = createGitHubAPI(githubToken);
-    const resolvedUser =
-      username || (await api.getCurrentUser()).login;
+    const api = this.settings.createApi();
+    const { repoOwner, repoName } = this.settings.current;
+    const resolvedUser = await this.settings.resolveUser(api);
 
     await this.branches.refresh(api, repoOwner, repoName, resolvedUser);
   }
@@ -94,11 +96,9 @@ export class DashboardController {
 
     this.activity.days = days;
 
-    const { githubToken, repoOwner, repoName, username } =
-      this.settings.current;
-    const api = createGitHubAPI(githubToken);
-    const resolvedUser =
-      username || (await api.getCurrentUser()).login;
+    const api = this.settings.createApi();
+    const { repoOwner, repoName } = this.settings.current;
+    const resolvedUser = await this.settings.resolveUser(api);
 
     await this.activity.refresh(api, repoOwner, repoName, resolvedUser);
   }

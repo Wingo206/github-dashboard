@@ -1,6 +1,6 @@
 import { Signal } from "../../lib/signals";
 import type { RepoActivity } from "../../lib/types";
-import type { GitHubAPI } from "../../lib/github-api";
+import type { IGitHubAPI } from "../../lib/github-api";
 import type { StoreState } from "./types";
 
 export class ActivityStore {
@@ -38,16 +38,14 @@ export class ActivityStore {
   }
 
   async refresh(
-    api: GitHubAPI,
+    api: IGitHubAPI,
     owner: string,
     repo: string,
     username: string,
   ): Promise<void> {
     this.setLoading();
     try {
-      const timePeriod =
-        this._days <= 1 ? "day" : this._days <= 7 ? "week" : this._days <= 30 ? "month" : "quarter";
-      const activities = await api.getRepoActivity(owner, repo, username, timePeriod);
+      const activities = await api.getRepoActivity(owner, repo, username, this._days);
       this.setReady(activities);
     } catch (err) {
       this.setError(
