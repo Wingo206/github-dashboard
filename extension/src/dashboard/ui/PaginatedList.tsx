@@ -1,4 +1,4 @@
-import { type ReactNode, Fragment, useState, useEffect, useRef } from "react";
+import { type ReactNode, Fragment, useState, useEffect, useRef, useCallback } from "react";
 import { StyledPanel } from "./StyledPanel";
 import { StyledSmallButton } from "./StyledSmallButton";
 import { cn } from "./cn";
@@ -53,10 +53,23 @@ export function PaginatedList<T>({
   const start = safePage * effectivePageSize;
   const pageItems = items.slice(start, start + effectivePageSize);
 
+  const handleWheel = useCallback(
+    (e: React.WheelEvent) => {
+      if (totalPages <= 1) return;
+      e.preventDefault();
+      if (e.deltaY > 0) {
+        setPage((p) => Math.min(totalPages - 1, p + 1));
+      } else if (e.deltaY < 0) {
+        setPage((p) => Math.max(0, p - 1));
+      }
+    },
+    [totalPages],
+  );
+
   return (
     <StyledPanel className={cn("h-full flex flex-col", className)}>
       <div className="shrink-0">{header}</div>
-      <div ref={contentRef} className="flex-1 overflow-hidden">
+      <div ref={contentRef} className="flex-1 overflow-hidden" onWheel={handleWheel}>
         {pageItems.map((item, i) => (
           <Fragment key={keyExtractor(item)}>
             {renderItem(item, start + i)}

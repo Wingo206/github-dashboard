@@ -3,6 +3,7 @@ import { timeAgo } from "../utils/time";
 import { useCheckout } from "../hooks/useCheckout";
 import { useSettings } from "../hooks/useSettings";
 import { StyledListRow, StyledBadge, StyledAvatar, StyledAvatarStack } from "../ui";
+import { PR_ITEM_HEIGHT } from "../constants/listHeights";
 import {
   CheckIcon,
   XIcon,
@@ -42,7 +43,7 @@ export default function PRCard({ pr }: PRCardProps) {
   ].filter(Boolean).join(" · ");
 
   return (
-    <StyledListRow className="items-start">
+    <StyledListRow className="items-start" style={{ height: PR_ITEM_HEIGHT }}>
       <div className="pt-0.5 shrink-0">
         <PRStatusIcon pr={pr} />
       </div>

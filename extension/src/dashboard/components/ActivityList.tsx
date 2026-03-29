@@ -21,8 +21,7 @@ import {
   GitMergeIcon,
   TrashIcon,
 } from "./Icons";
-
-const ACTIVITY_ITEM_HEIGHT = 44;
+import { ACTIVITY_ITEM_HEIGHT } from "../constants/listHeights";
 
 const ACTIVITY_TIME_OPTIONS: TimeSinceOption[] = [
   { label: "1d", value: 1 },
@@ -122,7 +121,7 @@ function ActivityRow({ activity }: { activity: RepoActivity }) {
   const branchName = activity.ref.replace("refs/heads/", "");
 
   return (
-    <StyledListRow className="py-2">
+    <StyledListRow className="py-2" style={{ height: ACTIVITY_ITEM_HEIGHT }}>
       <IconComponent className="text-gh-muted shrink-0" />
 
       <StyledBadge className={meta.badgeClass}>{meta.label}</StyledBadge>

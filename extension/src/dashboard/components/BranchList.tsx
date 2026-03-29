@@ -7,9 +7,8 @@ import { timeAgo } from "../utils/time";
 import { StyledPanelHeader, StyledListRow, PaginatedList, ListSkeleton, ListError, ListEmpty, TimeSincePicker } from "../ui";
 import type { TimeSinceOption } from "../ui";
 import type { RecentBranch } from "../../lib/types";
+import { BRANCH_ITEM_HEIGHT } from "../constants/listHeights";
 import { GitBranchIcon } from "./Icons";
-
-const BRANCH_ITEM_HEIGHT = 56;
 
 const BRANCH_TIME_OPTIONS: TimeSinceOption[] = [
   { label: "1d", value: 1 },
@@ -82,7 +81,7 @@ function BranchRow({
   onCheckout: (name: string) => void;
 }) {
   return (
-    <StyledListRow>
+    <StyledListRow style={{ height: BRANCH_ITEM_HEIGHT }}>
       <GitBranchIcon className="text-gh-muted shrink-0" />
 
       <div className="flex-1 min-w-0">

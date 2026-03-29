@@ -1,9 +1,8 @@
 import type { PRStore } from "../controllers";
 import { usePRStoreState } from "../hooks/usePRStore";
 import { StyledPanelHeader, SimplePaginatedList, ListSkeleton, ListError, ListEmpty } from "../ui";
+import { PR_ITEM_HEIGHT } from "../constants/listHeights";
 import PRCard from "./PRCard";
-
-const PR_ITEM_HEIGHT = 72;
 
 interface PRListProps {
   title: string;
