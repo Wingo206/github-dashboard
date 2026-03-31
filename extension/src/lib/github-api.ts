@@ -134,20 +134,23 @@ class GitHubAPI implements IGitHubAPI {
     );
   }
 
-  private async getPushActivity(
+  private async getBranchActivity(
     owner: string,
     repo: string,
     username: string,
     timePeriod: string,
   ): Promise<ActivityEntry[]> {
+    const types = ["push", "force_push", "branch_creation"];
     const activities: ActivityEntry[] = [];
-    let url: string | null =
-      `/repos/${owner}/${repo}/activity?activity_type=push&actor=${username}&time_period=${timePeriod}&per_page=100`;
-    while (url) {
-      const result: { data: ActivityEntry[]; nextUrl: string | null } =
-        await this.requestWithLinks<ActivityEntry[]>(url);
-      activities.push(...result.data);
-      url = result.nextUrl;
+    for (const type of types) {
+      let url: string | null =
+        `/repos/${owner}/${repo}/activity?activity_type=${type}&actor=${username}&time_period=${timePeriod}&per_page=100`;
+      while (url) {
+        const result: { data: ActivityEntry[]; nextUrl: string | null } =
+          await this.requestWithLinks<ActivityEntry[]>(url);
+        activities.push(...result.data);
+        url = result.nextUrl;
+      }
     }
     return activities;
   }
@@ -219,7 +222,7 @@ class GitHubAPI implements IGitHubAPI {
     username: string,
     days: number = 7
   ): Promise<RecentBranch[]> {
-    const activities = await this.getPushActivity(owner, repo, username, daysToTimePeriod(days));
+    const activities = await this.getBranchActivity(owner, repo, username, daysToTimePeriod(days));
     const branchNames = [...new Set(
       activities
         .map((a) => a.ref?.replace("refs/heads/", ""))
