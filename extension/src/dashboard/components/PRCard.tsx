@@ -4,11 +4,11 @@ import { useCheckout } from "../hooks/useCheckout";
 import { useSettings } from "../hooks/useSettings";
 import { StyledListRow, StyledBadge, StyledAvatar, StyledAvatarStack } from "../ui";
 import { PR_ITEM_HEIGHT } from "../constants/listHeights";
+import { BranchCopyBadge } from "./BranchCopyBadge";
 import {
   CheckIcon,
   XIcon,
   TaskListIcon,
-  TargetBranchIcon,
   CheckoutIcon,
   CommentIcon,
   GitMergeIcon,
@@ -39,7 +39,7 @@ export default function PRCard({ pr }: PRCardProps) {
     pr.reviewDecision === "changes_requested" ? "Changes requested" : null,
     `updated ${timeAgo(pr.updated_at)}`,
     pr.taskProgress ? `${pr.taskProgress.done}/${pr.taskProgress.total} tasks` : null,
-    `→ ${pr.base.ref}`,
+    `branch ${pr.head.ref}`,
   ].filter(Boolean).join(" · ");
 
   return (
@@ -109,17 +109,11 @@ export default function PRCard({ pr }: PRCardProps) {
           {pr.taskProgress && (
             <span className="flex items-center gap-1 shrink-0">
               <TaskListIcon size={14} className="text-gh-muted" />
-              {pr.taskProgress.done}/{pr.taskProgress.total} tasks
+              {pr.taskProgress.done}/{pr.taskProgress.total}
             </span>
           )}
 
-          <span className="inline-flex items-center gap-1 bg-gh-surface border border-gh-border rounded px-1.5 py-0.5 shrink-0">
-            <TargetBranchIcon size={12} className="text-gh-muted" />
-            To{" "}
-            <span className="font-mono text-xs text-gh-accent">
-              {pr.base.ref}
-            </span>
-          </span>
+          <BranchCopyBadge branchName={pr.head.ref} />
         </div>
       </div>
 
