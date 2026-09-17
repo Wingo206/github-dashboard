@@ -59,7 +59,6 @@ export default function Header({ onSettingsClick }: HeaderProps) {
 
         <button
           onClick={() => controller.refresh()}
-          disabled={loading}
           className="btn-icon"
           title="Refresh"
         >

@@ -1,10 +1,10 @@
 import { Signal } from "../../lib/signals";
 import type { RepoActivity } from "../../lib/types";
 import type { IGitHubAPI } from "../../lib/github-api";
-import type { StoreState } from "./types";
+import { initialStoreState, type StoreState } from "./types";
 
 export class ActivityStore {
-  private _state: StoreState<RepoActivity[]> = { status: "loading" };
+  private _state: StoreState<RepoActivity[]> = initialStoreState();
   private _days: number = 7;
 
   readonly changed = new Signal<void>();
@@ -22,18 +22,27 @@ export class ActivityStore {
     this.changed.emit();
   }
 
+  reset(): void {
+    this._state = { snapshot: { status: "none" }, loading: true };
+    this.changed.emit();
+  }
+
   setLoading(): void {
-    this._state = { status: "loading" };
+    this._state = { ...this._state, loading: true };
     this.changed.emit();
   }
 
   setReady(data: RepoActivity[]): void {
-    this._state = { status: "ready", data };
+    this._state = { snapshot: { status: "ready", data }, loading: false };
     this.changed.emit();
   }
 
   setError(error: string): void {
-    this._state = { status: "error", error };
+    if (this._state.snapshot.status === "ready") {
+      this._state = { ...this._state, loading: false };
+    } else {
+      this._state = { snapshot: { status: "error", error }, loading: false };
+    }
     this.changed.emit();
   }
 
@@ -42,7 +51,11 @@ export class ActivityStore {
     owner: string,
     repo: string,
     username: string,
+    options: { resetSnapshot?: boolean } = {},
   ): Promise<void> {
+    if (options.resetSnapshot) {
+      this.reset();
+    }
     this.setLoading();
     try {
       const activities = await api.getRepoActivity(owner, repo, username, this._days);

@@ -73,8 +73,8 @@ export default function ActivityList({ store }: ActivityListProps) {
   const state = useActivityStoreState(store);
   const controller = useDashboard();
 
-  const loading = state.status === "loading";
-  const activities = state.status === "ready" ? state.data : [];
+  const { snapshot } = state;
+  const activities = snapshot.status === "ready" ? snapshot.data : [];
 
   const header = (
     <StyledPanelHeader
@@ -87,7 +87,7 @@ export default function ActivityList({ store }: ActivityListProps) {
             onChange={(days) => controller.refreshActivity(days)}
           />
           <span className="min-w-[5.5rem] text-right">
-            {loading
+            {snapshot.status !== "ready"
               ? "Loading..."
               : `${activities.length} event${activities.length !== 1 ? "s" : ""}`}
           </span>
@@ -96,10 +96,10 @@ export default function ActivityList({ store }: ActivityListProps) {
     />
   );
 
-  if (state.status === "loading")
+  if (snapshot.status === "none")
     return <ListSkeleton header={header} message="Fetching activity..." className="h-full" />;
-  if (state.status === "error")
-    return <ListError header={header} error={state.error} className="h-full" />;
+  if (snapshot.status === "error")
+    return <ListError header={header} error={snapshot.error} className="h-full" />;
   if (activities.length === 0)
     return <ListEmpty header={header} message="No recent activity found." className="h-full" />;
 

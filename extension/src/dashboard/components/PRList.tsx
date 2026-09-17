@@ -12,19 +12,20 @@ interface PRListProps {
 export default function PRList({ title, store }: PRListProps) {
   const state = usePRStoreState(store);
   const header = <StyledPanelHeader title={title} />;
+  const { snapshot } = state;
 
-  if (state.status === "loading")
+  if (snapshot.status === "none")
     return <ListSkeleton header={header} message="Fetching pull requests..." className="h-full" />;
-  if (state.status === "error")
-    return <ListError header={header} error={state.error} className="h-full" />;
-  if (state.data.length === 0)
+  if (snapshot.status === "error")
+    return <ListError header={header} error={snapshot.error} className="h-full" />;
+  if (snapshot.data.length === 0)
     return <ListEmpty header={header} message="No pull requests found." className="h-full" />;
 
   return (
     <SimplePaginatedList
       title={title}
       itemLabel="pull request"
-      items={state.data}
+      items={snapshot.data}
       renderItem={(pr) => <PRCard pr={pr} />}
       keyExtractor={(pr) => pr.id}
       itemHeight={PR_ITEM_HEIGHT}

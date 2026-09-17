@@ -65,7 +65,7 @@ export default function Settings({ onClose }: SettingsProps) {
       return;
     }
     await update(form);
-    controller.refresh();
+    controller.refresh({ reset: true });
     setSaved(true);
   };
 

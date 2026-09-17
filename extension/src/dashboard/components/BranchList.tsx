@@ -27,8 +27,8 @@ export default function BranchList({ store }: BranchListProps) {
   const controller = useDashboard();
   const showCheckout = settings.repoPaths.length > 0;
 
-  const loading = state.status === "loading";
-  const branches = state.status === "ready" ? state.data : [];
+  const { snapshot } = state;
+  const branches = snapshot.status === "ready" ? snapshot.data : [];
 
   const header = (
     <StyledPanelHeader
@@ -41,7 +41,7 @@ export default function BranchList({ store }: BranchListProps) {
             onChange={(days) => controller.refreshBranches(days)}
           />
           <span className="min-w-[5.5rem] text-right">
-            {loading
+            {snapshot.status !== "ready"
               ? "Loading..."
               : `${branches.length} branch${branches.length !== 1 ? "es" : ""}`}
           </span>
@@ -50,10 +50,10 @@ export default function BranchList({ store }: BranchListProps) {
     />
   );
 
-  if (state.status === "loading")
+  if (snapshot.status === "none")
     return <ListSkeleton header={header} message="Fetching branches..." className="h-full" />;
-  if (state.status === "error")
-    return <ListError header={header} error={state.error} className="h-full" />;
+  if (snapshot.status === "error")
+    return <ListError header={header} error={snapshot.error} className="h-full" />;
   if (branches.length === 0)
     return <ListEmpty header={header} message="All recent branches have PRs." className="h-full" />;
 
