@@ -1,0 +1,18 @@
+---
+description: Rebuild the Chrome extension after finishing changes to it
+globs: extension/**
+alwaysApply: false
+---
+
+# Rebuild the extension when changes are ready
+
+After you finish a change under `extension/`, rebuild before you report the work as done:
+
+```bash
+cd extension && npm run build
+```
+
+- `npm run build` runs `tsc` and then `vite build`. Output goes to `extension/dist` (gitignored, so do not commit it).
+- Skip the rebuild if a `npm run dev` watch build is already running (check with `pgrep -af vite`). The watch build rebuilds automatically.
+- If the build fails, fix the errors before you report the work as done. A `tsc --noEmit` typecheck is not a substitute for the build.
+- When you report the work, tell the user to reload the extension in `chrome://extensions` (the reload icon on the extension card), then open a new dashboard tab.
