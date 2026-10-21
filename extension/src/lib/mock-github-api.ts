@@ -1,4 +1,4 @@
-import type { IGitHubAPI } from "./github-api";
+import { isAuthorOrAssignee, type IGitHubAPI } from "./github-api";
 import type {
   GitHubUser,
   EnrichedPR,
@@ -220,9 +220,13 @@ class MockGitHubAPI implements IGitHubAPI {
     return CURRENT_USER;
   }
 
-  async getEnrichedPullRequests(): Promise<EnrichedPR[]> {
+  async getEnrichedPullRequests(
+    _owner: string,
+    _repo: string,
+    username: string,
+  ): Promise<EnrichedPR[]> {
     await delay();
-    return buildMockPRs();
+    return buildMockPRs().filter((pr) => isAuthorOrAssignee(pr, username));
   }
 
   async getRecentBranches(): Promise<RecentBranch[]> {

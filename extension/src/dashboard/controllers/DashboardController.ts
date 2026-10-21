@@ -77,7 +77,11 @@ export class DashboardController {
 
       const prPromise = (async () => {
         try {
-          const enriched = await api.getEnrichedPullRequests(repoOwner, repoName);
+          const enriched = await api.getEnrichedPullRequests(
+            repoOwner,
+            repoName,
+            resolvedUser,
+          );
 
           this.myPRs.setReady(
             enriched.filter(

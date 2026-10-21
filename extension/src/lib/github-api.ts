@@ -22,7 +22,7 @@ interface GraphQLResponse<T> {
 
 export interface IGitHubAPI {
   getCurrentUser(): Promise<GitHubUser>;
-  getEnrichedPullRequests(owner: string, repo: string): Promise<EnrichedPR[]>;
+  getEnrichedPullRequests(owner: string, repo: string, username: string): Promise<EnrichedPR[]>;
   getRecentBranches(owner: string, repo: string, username: string, days?: number): Promise<RecentBranch[]>;
   getRepoActivity(owner: string, repo: string, username: string, days: number): Promise<RepoActivity[]>;
 }
@@ -211,9 +211,10 @@ class GitHubAPI implements IGitHubAPI {
   async getEnrichedPullRequests(
     owner: string,
     repo: string,
+    username: string,
   ): Promise<EnrichedPR[]> {
     const prs = await this.getPullRequests(owner, repo);
-    return this.enrichPRs(owner, repo, prs);
+    return this.enrichPRs(owner, repo, prs.filter((pr) => isAuthorOrAssignee(pr, username)));
   }
 
   async getRecentBranches(
@@ -285,6 +286,14 @@ class GitHubAPI implements IGitHubAPI {
         new Date(a.lastCommitDate).getTime()
     );
   }
+}
+
+export function isAuthorOrAssignee(pr: GitHubPullRequest, username: string): boolean {
+  const login = username.toLowerCase();
+  return (
+    pr.user.login.toLowerCase() === login ||
+    pr.assignees.some((a) => a.login.toLowerCase() === login)
+  );
 }
 
 function daysToTimePeriod(days: number): string {
